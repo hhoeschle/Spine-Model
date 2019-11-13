@@ -114,18 +114,18 @@ adjusted_end(blk_start, window_end, blk_end::DateTime) = min(window_end, blk_end
 
 A `Dict` mapping temporal blocks to a sorted `Array` of `TimeSlice`s in that block.
 """
-function block_time_slices(window_start, window_end)
+function block_time_slices(window_start, window_end; mod::Module=@__MODULE__)
     d = Dict{Object,Array{TimeSlice,1}}()
-    for blk in temporal_block()
+    for blk in mod.temporal_block()
         time_slices = Array{TimeSlice,1}()
-        blk_spec_start = block_start(temporal_block=blk, _strict=false)
-        blk_spec_end = block_end(temporal_block=blk, _strict=false)
+        blk_spec_start = mod.block_start(temporal_block=blk, _strict=false)
+        blk_spec_end = mod.block_end(temporal_block=blk, _strict=false)
         blk_start = adjusted_start(window_start, window_end, blk_spec_start)
         blk_end = adjusted_end(blk_start, window_end, blk_spec_end)
         time_slice_start = blk_start
         i = 1
         while time_slice_start < blk_end
-            duration = resolution(temporal_block=blk, i=i)
+            duration = mod.resolution(temporal_block=blk, i=i)
             time_slice_end = time_slice_start + duration
             if time_slice_end > blk_end
                 time_slice_end = blk_end
@@ -150,8 +150,8 @@ end
 Generate and export a convenience functor called `time_slice`, that can be used to retrieve
 time slices in the model between `window_start` and `window_end`. See [@TimeSliceSet()](@ref).
 """
-function generate_time_slice(window_start, window_end)
-    blk_time_slices = block_time_slices(window_start, window_end)
+function generate_time_slice(window_start, window_end; mod::Module=@__MODULE__)
+    blk_time_slices = block_time_slices(window_start, window_end; mod=mod)
     # Invert dictionary
     time_slice_blocks = Dict{TimeSlice,Array{Object,1}}()
     for (blk, time_slices) in blk_time_slices
